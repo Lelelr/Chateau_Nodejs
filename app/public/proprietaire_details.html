@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Détails du propriétaire</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+
+<body>
+    <!----------------------------- ZONE CONTENU------------------------------>
+    <div class="container mt-5">
+        <!-- Bouton retour -->
+        <a href="index.html" class="btn btn-secondary mb-3">Retour</a>
+
+        <!-- Titre -->
+        <h1 class="mb-4 text-center">Informations du propriétaire</h1>
+
+        <!-- Zone d’affichage des informations du propriétaire-->
+        <div id="infoProprietaire"></div>
+    </div>
+
+
+
+    <!-------------------------------- SCRIPT -------------------------------->
+    <script>
+    // récupérer les paramètres de l'URL
+    const params = new URLSearchParams(window.location.search);
+
+    // Éxtraire l'ID du propriétaire
+    const proprietaireId = params.get("id");
+
+    // Charger les informations du propriétaire
+    async function loadDetails() {
+
+        // Récupérer les informations du propriétaire par l'API
+        const response = await fetch(`http://localhost:3000/api/proprietaire/${proprietaireId}`);
+
+        // Convertir la réponse en JSON
+        const proprietaire = await response.json();
+
+
+
+        // Si aucun château trouvé ou si erreur -----------------------------------
+        if (!proprietaire || proprietaire.error) {
+            document.getElementById("infoProprietaire").innerHTML =
+                `<div class="alert alert-danger">Propriétaire introuvable.</div>`;
+            return;
+        }
+
+
+
+        // Si OK : Affiche les informations du propriétaire
+        afficherProprietaire(proprietaire);
+    }
+
+
+
+    // Fonction qui affiche les informations du propriétaire
+    function afficherProprietaire(p) {
+
+        let chateauxHTML = "";
+
+        // Si le propriétaire ne possède aucun château
+        if (p.chateaux.length === 0) {
+            chateauxHTML = `<p class="text-muted">Aucun château possédé.</p>`;
+
+
+        // Sinon, générer une liste de châteaux
+        } else {
+            chateauxHTML = `
+                <ul class="list-group">
+                    ${p.chateaux.map(c => `
+                        <li class="list-group-item">
+                            
+                            <strong>${c.nom}</strong><br>
+                            Type : ${c.type}<br>
+                            Style : ${c.style}<br>
+                            Surface : ${c.surface} m²<br>
+                            Prix : ${c.prix} €
+
+                        </li>
+                    `).join("")}
+                </ul>
+            `;
+        }
+
+        // Construire & afficher la carte Bootstrap
+        document.getElementById("infoProprietaire").innerHTML = `
+            <div class="card shadow-sm">
+                <div class="card-body">
+
+                    <!-- Nom du propriétaire -->
+                    <h3 class="card-title mb-3">${p.prenom} ${p.nom}</h3>
+
+                    <!-- Téléphone -->
+                    <p><strong>Téléphone :</strong> ${p.telephone}</p>
+
+                    <!-- Email -->
+                    <p><strong>Email :</strong> ${p.email}</p>
+
+                    <!-- Adresse -->
+                    <p><strong>Adresse :</strong> ${p.adresse}</p>
+
+                    <hr>
+
+                    <h4 class="mt-4">Châteaux possédés</h4>
+
+                    <!-- Châteaux possédés du propriétaire -->
+                    ${chateauxHTML}
+
+                </div>
+            </div>
+        `;
+    }
+
+    loadDetails();
+
+    </script>
+
+</body>
+</html>

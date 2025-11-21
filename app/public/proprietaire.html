@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ajouter un propriétaire</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+
+<body>
+    <!----------------------------- ZONE CONTENU------------------------------>
+    <div class="container mt-5">
+        <!-- Bouton retour -->
+        <a href="index.html" class="btn btn-secondary mb-3">Retour</a>
+
+        <!-- Titre -->
+        <h1 class="text-center mb-4">Ajouter un nouveau propriétaire</h1>
+
+        <!-- Formulaire -->
+        <form id="proprietaireForm">
+
+            <!-- NOM -->
+            <div class="mb-3">
+                <label class="form-label">Nom</label>
+                <input type="text" class="form-control" id="nom" required>
+            </div>
+
+            <!-- PRENOM -->
+            <div class="mb-3">
+                <label class="form-label">Prénom</label>
+                <input type="text" class="form-control" id="prenom" required>
+            </div>
+
+            <!-- TELEPHONE -->
+            <div class="mb-3">
+                <label class="form-label">Téléphone</label>
+                <input type="text" class="form-control" id="telephone" placeholder="0601020304" required>
+            </div>
+
+            <!-- EMAIL -->
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" placeholder="email@example.com" required>
+            </div>
+
+            <!-- ADRESSE -->
+            <div class="mb-3">
+                <label class="form-label">Adresse</label>
+                <input type="text" class="form-control" id="adresse" placeholder="Rue, Ville..." required>
+            </div>
+
+            <!-- CHATEAUX / MULTIPLE SELECT -->
+            <div class="mb-3">
+                <label class="form-label">Châteaux possédés</label>
+                <select id="chateaux" class="form-select" multiple required></select>
+                <small class="text-muted">Maintiens CTRL (Windows) ou CMD (Mac) pour en sélectionner plusieurs.</small>
+            </div>
+
+            <!-- BOUTON -->
+            <button type="submit" class="btn btn-primary w-100">Créer le propriétaire</button>
+        </form>
+
+        <!-- Zone pour afficher le résultat de la requête -->
+        <div id="result" class="mt-4"></div>
+    </div>
+
+
+    <!-- Toast Bootstrap -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="successToast" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-success text-white">
+                <strong class="me-auto">Succès 🎉</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Propriétaire créé avec succès ! Redirection en cours...
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+    <!-------------------------------- SCRIPT -------------------------------->
+    <script>
+
+    // Chargement des châteaux dans la liste <select>
+    async function loadChateaux() {
+
+        // Récupérer la liste des châteaux depuis l'API
+        const response = await fetch("http://localhost:3000/api/chateaux");
+
+        // Convertir la réponse en JSON
+        const chateaux = await response.json();
+
+        // Sélectionner l'élément <select> dans le DOM
+        const select = document.getElementById("chateaux");
+
+        // Vider le <select>
+        select.innerHTML = "";
+
+        // Pour chaque château reçu, créer une option dans le menu dérooulant
+        chateaux.forEach(chateau => {
+
+            // Création balise <option>
+            const option = document.createElement("option");
+
+            // Valeur de l'option = id du château (pour envoyer au backend)
+            option.value = chateau._id;
+
+            // Texte affiché dans la liste
+            option.textContent = `${chateau.nom} (${chateau.type})`;
+
+            // Ajoute l'option au <select>
+            select.appendChild(option);
+        });
+    }
+
+    // Appel de la fonction au chargement de la page
+    loadChateaux();
+
+
+
+
+    // Soumission du formulaire d'ajout du propriétaire -----------------------
+
+    // Récuperer le formulaire dans la page
+    const form = document.getElementById('proprietaireForm');
+
+    // Préparer le toast Bootstrap pour afficher un message de succès
+    const toast = new bootstrap.Toast(document.getElementById('successToast'));
+
+
+
+    // Quand on soumet le formulaire : ----------------------------------------
+    form.addEventListener('submit', async (e) => {
+
+        // Empêcher le rechargement automatique de la page
+        e.preventDefault();
+
+        // Récupérer les châteaux sélectionnés dans le <select multiple>
+        const selectedChateaux = Array.from(
+            document.getElementById('chateaux').selectedOptions
+        ).map(option => option.value); // Récuperer uniquement les valeurs (id châteaux)
+
+        
+        // Créer un objet "data" avec les valeurs du formulaire
+        const data = {
+            nom: document.getElementById('nom').value,
+            prenom: document.getElementById('prenom').value,
+            telephone: document.getElementById('telephone').value,
+            email: document.getElementById('email').value,
+            adresse: document.getElementById('adresse').value,
+
+            // Ajouter la liste des châteaux sélectionnés
+            chateaux: selectedChateaux
+        };
+
+
+        // Envoyer les données au backend avec une requête HTTP POST
+        const response = await fetch('http://localhost:3000/api/proprietaire', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }, // envoie du JSON
+            body: JSON.stringify(data) // convertir objet JS en texte JSON
+        });
+
+
+
+        // Si création réussi
+        if (response.ok) {
+            // Afficher le toast
+            toast.show();
+
+            // Reset du formulaire
+            form.reset();
+
+            // Redirection après 2 secondes
+            setTimeout(() => {
+                window.location.href = "index.html";
+            }, 2000);
+
+        } else {
+            // Si erreur
+            alert("Erreur lors de l'ajout du propriétaire.");
+        }
+    });
+
+    </script>
+</body>
+</html>
